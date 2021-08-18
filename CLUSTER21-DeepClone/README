@@ -1,0 +1,24 @@
+This README describes the artifacts corresponding to the paper:
+DeepClone: Lightweight State Replication of Deep Learning Models for Data Parallel Training. 
+Published in CLUSTER’20: The 2020 IEEE International Conference on Cluster Computing (Kobe, Japan, 2020).
+
+The implementation of DeepClone is based on three components:
+
+1. A MPI-based direct transfer of tensors between the original instances and standby instances. 
+To this end, we intercept the raw tensor pointers through custom Tensorflow C++ operators. 
+In turn, this is facilitated by the TMCI library, available here: https://xgitlab.cels.anl.gov/sds/tmci
+We wrote a custom backend which needs to be loaded as a plugin, source code available under: tmci/plugin/src
+
+2. A patch to the Tensorflow optimizer (optimizer_v2.py), which is shipped with Keras. 
+In particular, we changed the _distribted_apply method, which is responsible to construct
+the execution graph that updates the weights during the back-propagation based on the 
+corresponding gradients. In particular, we augmented the execution graph to call our
+TMCI plugin for each tensor after its weights were updated. 
+To apply the patch, add the root path to the optimizer to the PYTHONPATH environment variable
+before running Tensorflow. The optimizer needs to be placed in the following directory 
+hierarchy relative to the root path: tensorflow_core/python/keras/optimizer_v2
+
+3. A keras optimizer callback that needs to be added to the list of callbacks when
+invoking model.fit. This callback loads the TMCI library and DeepClone backend, splits
+the MPI ranks into original vs cloned instances, then implements their behavior accordingly.
+
