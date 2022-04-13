@@ -1,0 +1,20 @@
+dist: focal
+language: c++
+
+addons:
+  apt:
+    packages:
+    - libmpich-dev
+    - mpich
+    - zlib1g-dev
+
+script:
+- rm -rf $HOME/deploy
+- ./bootstrap.sh
+- mkdir -p $HOME/deploy
+- ./auto-install.py $HOME/deploy
+- cd build && ctest --verbose
+
+branches:
+  only:
+  - master
